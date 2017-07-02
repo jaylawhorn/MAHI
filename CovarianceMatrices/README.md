@@ -1,0 +1,1 @@
+make_noise_cov.C requires this cmssw: /afs/cern.ch/work/j/jlawhorn/public/method2rnd2016/noise_matrix/CMSSW_8_0_18/src/HCALPFG/HcalTupleMaker

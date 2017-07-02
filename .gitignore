@@ -1,3 +1,9 @@
+*~
+*.pcm
+*.png
+*.pdf
+*.root
+
 # Prerequisites
 *.d
 
