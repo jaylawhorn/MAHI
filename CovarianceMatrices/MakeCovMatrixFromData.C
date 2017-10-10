@@ -21,7 +21,7 @@
 
 void MakeCovMatrixFromData() {
 
-  TFile *pedf = new TFile("pedestal.root");
+  TFile *pedf = new TFile("pedestalCor.root");
   TTree *pedt = (TTree*) pedf->Get("cor");
 
   double pedAvgTS[10];
@@ -32,7 +32,10 @@ void MakeCovMatrixFromData() {
   pedt->SetBranchAddress("covTS",&pedCovTS);
   pedt->GetEntry(0);
 
-  TFile *f = new TFile("/afs/cern.ch/work/j/jlawhorn/public/Candidacy/CMSSW_9_2_3_patch2/src/MAHI/SkimmedData/Run2017A_ZeroBiasAll.root");
+  double avgSumPed =0;
+  for (int i=0; i<10; i++) avgSumPed+=pedAvgTS[i];
+
+  TFile *f = new TFile("../SkimmedData/ZeroBias_2017A_small.root");
   TTree *it = (TTree*) f->Get("cor");
   if (it == 0) return;
 
@@ -62,8 +65,8 @@ void MakeCovMatrixFromData() {
 
   double avgTS[10]={0};
   double rmsTS[10]={0};
-  double covTS[10][10]={0};
-  double corTS[10][10]={0};
+  double covTS[10][10]={{0}};
+  double corTS[10][10]={{0}};
 
   /*for (int i=0; i<10; i++) { 
     avgTS[i]=0;
@@ -75,7 +78,7 @@ void MakeCovMatrixFromData() {
     }
     }*/
 
-  TFile *of = new TFile("pulse_plain.root","recreate");
+  TFile *of = new TFile("pulseCor_withThresh_pedSub.root","recreate");
   TTree *t = new TTree("cor","");
   
   t->Branch("nHits",&nHits,"nHits/D");
@@ -88,21 +91,23 @@ void MakeCovMatrixFromData() {
   //for (Long64_t ii=0; ii<100;ii++) {
     it->GetEntry(ii);
 
-    if (sumQ<20000 || sumQ>25000) continue;
+    double tempSumQ = sumQ-avgSumPed;
+
+    //if (sumQ<20000 || sumQ>25000) continue;
+    if (tempSumQ<5000 || tempSumQ>10000) continue;
 
     nHits++;
       
     for (int i=0; i<10; i++) {
-      //Double_t qi=fc[i]-pedAvgTS[i];
-      Double_t qi=fc[i]/sumQ;
+      Double_t qi=fc[i]-pedAvgTS[i];
+      //Double_t qi=fc[i];
       //cout << "TS" << i << ": " << fc[i] << " - " << pedAvgTS[i] << " = " << qi << endl;
-      avgTS[i]+=qi;
-      rmsTS[i]+=qi*qi;
+      avgTS[i]+=qi/tempSumQ;
+      rmsTS[i]+=(qi*qi)/tempSumQ/tempSumQ;
       
       for (int j=0; j<i+1; j++) {
-	//Double_t qj=fc[j]-pedAvgTS[j];
-	Double_t qj=fc[j]/sumQ;
-	covTS[i][j]+=qi*qj;
+	Double_t qj=fc[j]-pedAvgTS[j];
+	covTS[i][j]+=(qi*qj)/tempSumQ/tempSumQ;
       }
     }
   }
@@ -115,11 +120,13 @@ void MakeCovMatrixFromData() {
   }
 
   cout << endl;
+
   
   for (int i=0; i<10; i++) {
     for (int j=0; j<i+1; j++) {
       
       covTS[i][j]/=nHits;
+      //covTS[i][j]-=pedCovTS[i][j];
       covTS[i][j]-=avgTS[i]*avgTS[j];
       //make correlation matrix
       corTS[i][j]=covTS[i][j]/(rmsTS[i]*rmsTS[j]);

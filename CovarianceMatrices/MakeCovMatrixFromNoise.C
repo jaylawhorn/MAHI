@@ -23,7 +23,7 @@ void MakeCovMatrixFromNoise() {
 
   TTree *it;
 
-  TFile *f = new TFile("/afs/cern.ch/work/j/jlawhorn/public/Candidacy/CMSSW_9_2_3_patch2/src/MAHI/SkimmedData/PedestalRun_297628.root");
+  TFile *f = new TFile("/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/MAHI/SkimmedData/pedestal_small.root");
   it = (TTree*) f->Get("cor");
   if (it == 0) return;
 
@@ -66,7 +66,7 @@ void MakeCovMatrixFromNoise() {
     }
   }
 
-  TFile *of = new TFile("pedestal.root","recreate");
+  TFile *of = new TFile("pedestalCor.root","recreate");
   TTree *t = new TTree("cor","");
   
   t->Branch("nHits",&nHits,"nHits/D");

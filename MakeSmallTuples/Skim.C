@@ -19,9 +19,10 @@
 #include <sstream>                        // class for parsing strings
 #endif
 
-void Skim(//TString ifn="/eos/cms/store/user/jlawhorn/HEP17_PHASE_SCAN/ZeroBias1/Run2017A-v1_RAW_20170630_074719/170630_054747/0000/HcalTupleMaker_1.root", 
-	  TString ifn="/afs/cern.ch/work/j/jlawhorn/public/Candidacy/CMSSW_9_2_3_patch2/src/MAHI/pedestalRun_297628.root",
-	  TString ofn="/afs/cern.ch/work/j/jlawhorn/public/Candidacy/CMSSW_9_2_3_patch2/src/MAHI/SkimmedData/PedestalRun_297628.root") {
+void Skim(//TString ifn="/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/HCALPFG/HcalTupleMaker/pedestal.root",
+	  //TString ofn="pedestal_small.root") {
+	  TString ifn="/eos/cms/store/user/jlawhorn/HEP17_TIMED_IN/ZeroBias_2017A_part.root",
+	  TString ofn="ZeroBias_2017A_small.root") {
 
   TTree *fChain;
 

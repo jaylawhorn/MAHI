@@ -20,8 +20,8 @@
 #endif
 
 void DrawCorrelationMatrix(
-			   TString infile = "pulse_plain.root", 
-			   TString label = "pulse_nosub"
+			   TString infile = "pedestalCor.root", 
+			   TString label = "pedestal"
 			   ) {
 
   TFile *inf = new TFile(infile,"read");
@@ -70,7 +70,7 @@ void DrawCorrelationMatrix(
     }
   }
 
-  corr_matrix->GetZaxis()->SetRangeUser(-1,1);
+  //corr_matrix->GetZaxis()->SetRangeUser(-1,1);
   corr_matrix->GetXaxis()->SetTitle("Time Slice");
   corr_matrix->GetYaxis()->SetTitle("Time Slice");
   corr_matrix->Draw("colz text");
