@@ -20,11 +20,11 @@
 #endif
 
 void DrawCorrelationMatrix(
-			   TString infile = "pedestalCor.root", 
-			   TString label = "pedestal"
+			   TString baseDir="/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/MAHI",
+			   TString fn="NonZS_304797"
 			   ) {
-
-  TFile *inf = new TFile(infile,"read");
+  
+  TFile *inf = new TFile(baseDir+"/CovarianceMatrixFiles/"+fn+".root","read");
   TTree *t = (TTree*) inf->Get("cor");
 
   double nHits=0;
@@ -36,7 +36,7 @@ void DrawCorrelationMatrix(
   t->SetBranchAddress("nHits", &nHits);
   t->SetBranchAddress("avgTS",&avgTS);
   t->SetBranchAddress("rmsTS",&rmsTS);
-  t->SetBranchAddress("corTS",&corTS);
+  t->SetBranchAddress("covTS",&corTS);
 
   t->GetEntry(0);
 
@@ -75,7 +75,7 @@ void DrawCorrelationMatrix(
   corr_matrix->GetYaxis()->SetTitle("Time Slice");
   corr_matrix->Draw("colz text");
 
-  c->SaveAs(label+"_cor.png");
+  c->SaveAs(baseDir+"/CovarianceMatrixPlots/"+fn+"_cor.png");
 
   /*  avg_hist->GetXaxis()->SetTitle("Time Slice");
   avg_hist->GetYaxis()->SetTitle("Average");

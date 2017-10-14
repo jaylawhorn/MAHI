@@ -39,8 +39,8 @@ void MakeCovMatrixFromData() {
   TTree *it = (TTree*) f->Get("cor");
   if (it == 0) return;
 
-  int bx=0, evt=0, ls=0, orb=0, run=0;
-  uint ieta=0, iphi=0, depth=0;
+  uint bx=0, evt=0, ls=0, orb=0, run=0;
+  int ieta=0, iphi=0, depth=0;
   double sumQ=0;
   double fc[10]={0};
   uint tdc[10]={0};
@@ -63,6 +63,7 @@ void MakeCovMatrixFromData() {
 
   Long64_t nHits=0;
 
+  double tdcS=0;
   double avgTS[10]={0};
   double rmsTS[10]={0};
   double covTS[10][10]={{0}};
@@ -78,36 +79,53 @@ void MakeCovMatrixFromData() {
     }
     }*/
 
-  TFile *of = new TFile("pulseCor_withThresh_pedSub.root","recreate");
+  TFile *of = new TFile("test.root","recreate");
   TTree *t = new TTree("cor","");
   
   t->Branch("nHits",&nHits,"nHits/D");
+  //t->Branch("tdc",&tdcS,"tdc/D");
   t->Branch("avgTS",&avgTS,"avgTS[10]/D");
   t->Branch("rmsTS",&rmsTS,"rmsTS[10]/D");
   t->Branch("covTS",&covTS,"covTS[10][10]/D");
   t->Branch("corTS",&corTS,"corTS[10][10]/D");
 
+  TH1D *hTDC = new TH1D("hTDC","",100,-50,50);
+
   for (Long64_t ii=0; ii<nEntries;ii++) {
-  //for (Long64_t ii=0; ii<100;ii++) {
+  //for (Long64_t ii=0; ii<10000;ii++) {
     it->GetEntry(ii);
 
-    double tempSumQ = sumQ-avgSumPed;
+    //double tempSumQ = sumQ-avgSumPed;
+    //if (tempSumQ<5000 || tempSumQ>10000) continue;
+    if (sumQ<5000 || sumQ>10000) continue;
+    //if (sumQ<5000) continue;
 
-    //if (sumQ<20000 || sumQ>25000) continue;
-    if (tempSumQ<5000 || tempSumQ>10000) continue;
+    tdcS=0;
+    
+    if (tdc[4]<60) tdcS=tdc[4];
+    else if(tdc[3]<60) {
+      //cout << "hi" << endl;
+      tdcS=(double)tdc[3]-50;
+    }
+    else tdcS=-50;
+    //cout << tdcS << endl;
+    hTDC->Fill(tdcS);
 
     nHits++;
       
     for (int i=0; i<10; i++) {
-      Double_t qi=fc[i]-pedAvgTS[i];
-      //Double_t qi=fc[i];
-      //cout << "TS" << i << ": " << fc[i] << " - " << pedAvgTS[i] << " = " << qi << endl;
-      avgTS[i]+=qi/tempSumQ;
-      rmsTS[i]+=(qi*qi)/tempSumQ/tempSumQ;
+      //Double_t qi=fc[i]-pedAvgTS[i];
+      Double_t qi=fc[i];
+      //avgTS[i]+=qi/tempSumQ;
+      avgTS[i]+=qi;
+      //rmsTS[i]+=(qi*qi)/tempSumQ/tempSumQ;
+      rmsTS[i]+=(qi*qi);
       
       for (int j=0; j<i+1; j++) {
-	Double_t qj=fc[j]-pedAvgTS[j];
-	covTS[i][j]+=(qi*qj)/tempSumQ/tempSumQ;
+	//Double_t qj=fc[j]-pedAvgTS[j];
+	Double_t qj=fc[j];
+	//covTS[i][j]+=(qi*qj)/tempSumQ/tempSumQ;
+	covTS[i][j]+=(qi*qj);
       }
     }
   }
@@ -116,11 +134,11 @@ void MakeCovMatrixFromData() {
     avgTS[i]/=nHits;
     rmsTS[i]/=nHits;
     rmsTS[i]=sqrt(rmsTS[i]-avgTS[i]*avgTS[i]);
-    cout << i << ": " << avgTS[i] << ", " << rmsTS[i] << endl;
+    //cout << i << ": " << avgTS[i] << ", " << rmsTS[i] << endl;
   }
 
-  cout << endl;
-
+  //cout << endl;
+  
   
   for (int i=0; i<10; i++) {
     for (int j=0; j<i+1; j++) {
@@ -135,8 +153,8 @@ void MakeCovMatrixFromData() {
       covTS[j][i]=covTS[i][j];
       corTS[j][i]=corTS[i][j];
 
-      cout << "array[" << i << "][" << j << "] = " << covTS[i][j] << ";" <<endl;
-      cout << "array[" << j << "][" << i << "] = " << covTS[i][j] << ";" <<endl;
+      //cout << "array[" << i << "][" << j << "] = " << covTS[i][j] << ";" <<endl;
+      //cout << "array[" << j << "][" << i << "] = " << covTS[i][j] << ";" <<endl;
       
     }
   }

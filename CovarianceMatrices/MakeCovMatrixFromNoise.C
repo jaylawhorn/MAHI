@@ -19,16 +19,19 @@
 #include <sstream>                        // class for parsing strings
 #endif
 
-void MakeCovMatrixFromNoise() {
+void MakeCovMatrixFromNoise(
+			    TString baseDir="/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/MAHI",
+			    TString fn="NonZS_304797"
+			    ) {
 
   TTree *it;
 
-  TFile *f = new TFile("/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/MAHI/SkimmedData/pedestal_small.root");
+  TFile *f = new TFile(baseDir+"/SkimmedData/"+fn+"_small.root");
   it = (TTree*) f->Get("cor");
   if (it == 0) return;
 
   uint bx=0, evt=0, ls=0, orb=0, run=0;
-  uint ieta=0, iphi=0, depth=0;
+  int ieta=0, iphi=0, depth=0;
   double sumQ=0;
   double fc[10];
   uint tdc[10];
@@ -66,7 +69,7 @@ void MakeCovMatrixFromNoise() {
     }
   }
 
-  TFile *of = new TFile("pedestalCor.root","recreate");
+  TFile *of = new TFile(baseDir+"/CovarianceMatrixFiles/"+fn+".root","recreate");
   TTree *t = new TTree("cor","");
   
   t->Branch("nHits",&nHits,"nHits/D");

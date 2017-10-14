@@ -21,8 +21,8 @@
 
 void Skim(//TString ifn="/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/HCALPFG/HcalTupleMaker/pedestal.root",
 	  //TString ofn="pedestal_small.root") {
-	  TString ifn="/eos/cms/store/user/jlawhorn/HEP17_TIMED_IN/ZeroBias_2017A_part.root",
-	  TString ofn="ZeroBias_2017A_small.root") {
+	  TString ifn="../run_304424.root",
+	  TString ofn="SkimmedData/PedestalRun_304424_small.root") {
 
   TTree *fChain;
 
@@ -106,12 +106,15 @@ void Skim(//TString ifn="/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/HC
       iphi=QIE11DigiIPhi->at(k);
       depth=QIE11DigiDepth->at(k);
 
+      bool useEvent=true;
+
       for (int i=0; i<10; i++) {
 	fc[i] = QIE11DigiFC->at(k).at(i);
 	tdc[i] = QIE11DigiTDC->at(k).at(i);
+	if (tdc[i]!=63) useEvent=false;
       }
-
-      t->Fill();
+      if (useEvent)
+	t->Fill();
     }
   }
 
