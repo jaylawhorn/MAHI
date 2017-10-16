@@ -56,7 +56,7 @@ void Skim(//TString ifn="/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/HC
   fChain->SetBranchAddress("run", &run);
 
   Long64_t nEntries = fChain->GetEntries();
-
+  cout << nEntries << endl;
   TFile *of = new TFile(ofn,"recreate");
   TTree *t = new TTree("cor","");
 
@@ -95,8 +95,6 @@ void Skim(//TString ifn="/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/HC
       sumQ=0;
       for (UInt_t j=0; j<10; j++) { sumQ+=QIE11DigiFC->at(k).at(j);}
       
-      //if (sumQ<2000) continue;
-
       bx1=bx;
       evt1=event;
       ls1=ls;
@@ -106,18 +104,14 @@ void Skim(//TString ifn="/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/HC
       iphi=QIE11DigiIPhi->at(k);
       depth=QIE11DigiDepth->at(k);
 
-      bool useEvent=true;
-
       for (int i=0; i<10; i++) {
 	fc[i] = QIE11DigiFC->at(k).at(i);
 	tdc[i] = QIE11DigiTDC->at(k).at(i);
-	if (tdc[i]!=63) useEvent=false;
       }
-      if (useEvent)
-	t->Fill();
+      t->Fill();
     }
   }
-
+  
 
   of->Write();
   of->Close();

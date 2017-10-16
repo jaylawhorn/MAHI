@@ -19,32 +19,47 @@
 #include <sstream>                        // class for parsing strings
 #endif
 
-void MakeCovMatrixFromData() {
+struct covStruct {
+  covStruct() :
+    nHits(0)
+    //avgTS({0}), 
+    //rmsTS({0}),
+    //covTS({{0}}) 
+  {
+    for (int i=0; i<10; i++) {
+      avgTS[i]=0; rmsTS[i]=0;
+      for (int j=0; j<10; j++) {
+	covTS[i][j]=0;
+      }
+    }
+  }
 
-  TFile *pedf = new TFile("pedestalCor.root");
-  TTree *pedt = (TTree*) pedf->Get("cor");
+  int nHits;
+  double avgTS[10];
+  double rmsTS[10];
+  double covTS[10][10];
 
-  double pedAvgTS[10];
-  double pedRmsTS[10];
-  double pedCovTS[10][10];
-  pedt->SetBranchAddress("avgTS",&pedAvgTS);
-  pedt->SetBranchAddress("rmsTS",&pedRmsTS);
-  pedt->SetBranchAddress("covTS",&pedCovTS);
-  pedt->GetEntry(0);
+};
 
-  double avgSumPed =0;
-  for (int i=0; i<10; i++) avgSumPed+=pedAvgTS[i];
+void MakeCovMatrixFromData(
+			   TString baseDir="/afs/cern.ch/work/j/jlawhorn/public/CMSSW_9_2_10/src/MAHI",
+			   TString fn="Data_ZeroBias_2017A_Collisions"
+			   ) {
 
-  TFile *f = new TFile("../SkimmedData/ZeroBias_2017A_small.root");
-  TTree *it = (TTree*) f->Get("cor");
+  TTree *it;
+
+  cout << baseDir+"/SkimmedData/"+fn+"_skim.root" << endl;
+
+  TFile *f = new TFile(baseDir+"/SkimmedData/"+fn+"_skim.root");
+  it = (TTree*) f->Get("cor");
   if (it == 0) return;
 
   uint bx=0, evt=0, ls=0, orb=0, run=0;
   int ieta=0, iphi=0, depth=0;
   double sumQ=0;
-  double fc[10]={0};
-  uint tdc[10]={0};
-  double ts[10]={0};
+  double fc[10];
+  uint tdc[10];
+  double ts[10];
 
   it->SetBranchAddress("bx",   &bx);
   it->SetBranchAddress("event",&evt);
@@ -63,103 +78,97 @@ void MakeCovMatrixFromData() {
 
   Long64_t nHits=0;
 
-  double tdcS=0;
-  double avgTS[10]={0};
-  double rmsTS[10]={0};
-  double covTS[10][10]={{0}};
-  double corTS[10][10]={{0}};
+  double avgTS[10] = {0};
+  double rmsTS[10] = {0};
+  double covTS[10][10] = {{0}};
 
-  /*for (int i=0; i<10; i++) { 
-    avgTS[i]=0;
-    rmsTS[i]=0;
-
-    for (int j=0; j<10; j++) {
-      covTS[i][j]=0;
-      corTS[i][j]=0;
-    }
-    }*/
-
-  TFile *of = new TFile("test.root","recreate");
+  TFile *of = new TFile(baseDir+"/CovarianceMatrixFiles/"+fn+".root","recreate");
   TTree *t = new TTree("cor","");
   
   t->Branch("nHits",&nHits,"nHits/D");
-  //t->Branch("tdc",&tdcS,"tdc/D");
   t->Branch("avgTS",&avgTS,"avgTS[10]/D");
   t->Branch("rmsTS",&rmsTS,"rmsTS[10]/D");
   t->Branch("covTS",&covTS,"covTS[10][10]/D");
-  t->Branch("corTS",&corTS,"corTS[10][10]/D");
 
-  TH1D *hTDC = new TH1D("hTDC","",100,-50,50);
+  const int nBins=5;
 
-  for (Long64_t ii=0; ii<nEntries;ii++) {
-  //for (Long64_t ii=0; ii<10000;ii++) {
+  double binBounds[nBins+1] = {0, 2000, 4000, 6000, 10000, 20000}; 
+
+  std::vector<covStruct> binned;
+
+  for (int i=0; i<nBins; i++) {
+    binned.push_back(covStruct());
+    //cout << binned[0].avgTS[0] << endl;
+  }
+
+  cout << nEntries << endl;
+
+  for (Long64_t ii=0; ii<nEntries; ii++) {
+    //for (Long64_t ii=0; ii<10000;ii++) {
     it->GetEntry(ii);
 
-    //double tempSumQ = sumQ-avgSumPed;
-    //if (tempSumQ<5000 || tempSumQ>10000) continue;
-    if (sumQ<5000 || sumQ>10000) continue;
-    //if (sumQ<5000) continue;
-
-    tdcS=0;
+    //if (ii%100==0 && ii>3088000) {
+    //  cout << ii << endl;
+    //  cout << sumQ << endl;
+    //}
     
-    if (tdc[4]<60) tdcS=tdc[4];
-    else if(tdc[3]<60) {
-      //cout << "hi" << endl;
-      tdcS=(double)tdc[3]-50;
+    //if (sumQ<2000) continue;
+    
+    int iBin=-1;
+    for (int j=0; j<nBins; j++) {
+      if (sumQ>binBounds[j] && sumQ<binBounds[j+1]) iBin=j;  
     }
-    else tdcS=-50;
-    //cout << tdcS << endl;
-    hTDC->Fill(tdcS);
+    //cout << sumQ << ", " << iBin << endl;
+    if (iBin==-1) continue;
 
-    nHits++;
+    binned[iBin].nHits++;
       
     for (int i=0; i<10; i++) {
-      //Double_t qi=fc[i]-pedAvgTS[i];
+      
       Double_t qi=fc[i];
-      //avgTS[i]+=qi/tempSumQ;
-      avgTS[i]+=qi;
-      //rmsTS[i]+=(qi*qi)/tempSumQ/tempSumQ;
-      rmsTS[i]+=(qi*qi);
+      binned[iBin].avgTS[i]+=qi;
+      binned[iBin].rmsTS[i]+=qi*qi;
       
       for (int j=0; j<i+1; j++) {
-	//Double_t qj=fc[j]-pedAvgTS[j];
 	Double_t qj=fc[j];
-	//covTS[i][j]+=(qi*qj)/tempSumQ/tempSumQ;
-	covTS[i][j]+=(qi*qj);
+	binned[iBin].covTS[i][j]+=qi*qj;
       }
     }
   }
-  
-  for (int i=0; i<10; i++) {
-    avgTS[i]/=nHits;
-    rmsTS[i]/=nHits;
-    rmsTS[i]=sqrt(rmsTS[i]-avgTS[i]*avgTS[i]);
-    //cout << i << ": " << avgTS[i] << ", " << rmsTS[i] << endl;
-  }
+  //cout << "??" << endl;
+  for (int iBin=0; iBin<nBins; iBin++) {
+    for (int i=0; i<10; i++) {
+      binned[iBin].avgTS[i]/=binned[iBin].nHits;
+      binned[iBin].rmsTS[i]/=binned[iBin].nHits;
+      binned[iBin].rmsTS[i]=sqrt(binned[iBin].rmsTS[i]-binned[iBin].avgTS[i]*binned[iBin].avgTS[i]);
 
-  //cout << endl;
-  
-  
-  for (int i=0; i<10; i++) {
-    for (int j=0; j<i+1; j++) {
-      
-      covTS[i][j]/=nHits;
-      //covTS[i][j]-=pedCovTS[i][j];
-      covTS[i][j]-=avgTS[i]*avgTS[j];
-      //make correlation matrix
-      corTS[i][j]=covTS[i][j]/(rmsTS[i]*rmsTS[j]);
-      //if (i==4 || j==4) covTS[i][j]=0;
+      avgTS[i] = binned[iBin].avgTS[i];
+      rmsTS[i] = binned[iBin].rmsTS[i];
 
-      covTS[j][i]=covTS[i][j];
-      corTS[j][i]=corTS[i][j];
-
-      //cout << "array[" << i << "][" << j << "] = " << covTS[i][j] << ";" <<endl;
-      //cout << "array[" << j << "][" << i << "] = " << covTS[i][j] << ";" <<endl;
-      
+      //cout << i << ": " << binned[iBin].avgTS[i] << ", " << binned[iBin].rmsTS[i] << endl;
     }
+    //cout << endl;
+  
+    for (int i=0; i<10; i++) {
+      for (int j=0; j<i+1; j++) {
+	
+	binned[iBin].covTS[i][j]/=binned[iBin].nHits;
+	binned[iBin].covTS[i][j]-=binned[iBin].avgTS[i]*binned[iBin].avgTS[j];
+	binned[iBin].covTS[j][i] = binned[iBin].covTS[i][j];
+
+	covTS[i][j] = binned[iBin].covTS[i][j];
+	covTS[j][i] = binned[iBin].covTS[j][i];
+	//make correlation matrix
+	//binned[iBin].corTS[i][j]=covTS[i][j]/(rmsTS[i]*rmsTS[j]);
+	//corTS[j][i] = corTS[i][j];
+	
+	//cout << "array[" << i << "][" << j << "] = " << covTS[i][j] << ";" <<endl;
+	//cout << "array[" << j << "][" << i << "] = " << covTS[i][j] << ";" <<endl;
+      }
+    }
+    t->Fill();
   }
 
-  t->Fill();
   of->Write();
   of->Close();
 

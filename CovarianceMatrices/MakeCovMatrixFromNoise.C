@@ -26,7 +26,9 @@ void MakeCovMatrixFromNoise(
 
   TTree *it;
 
-  TFile *f = new TFile(baseDir+"/SkimmedData/"+fn+"_small.root");
+  cout << baseDir+"/SkimmedData/"+fn+"_skim.root" << endl;
+
+  TFile *f = new TFile(baseDir+"/SkimmedData/"+fn+"_skim.root");
   it = (TTree*) f->Get("cor");
   if (it == 0) return;
 
