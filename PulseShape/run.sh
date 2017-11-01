@@ -17,10 +17,11 @@ eval `scramv1 runtime -sh`
 cd ${workDir}
 which root
 
-cp ${builddir}/makeRecHitTree.C .
-cp ${builddir}/rootlogon.C .
+cp ${builddir}/makeSummaryTree_HPD.C .
+cp ${builddir}/phaseScanInfo_HPD.txt .
+#cp ${builddir}/rootlogon.C .
 
-root -l -q makeRecHitTree.C+\(\"${eosfolder}${file}\",\"${outfolder}${file}\"\)
+root -l -q makeSummaryTree_HPD.C+\(\"${eosfolder}${file}\",\"${outfolder}${file}\"\)
 
 status=`echo $?`
 echo "Status - $status"
